@@ -19,7 +19,11 @@ def load_data(sheet_url):
 
 try:
     df_mobil = load_data(sheet1_url)
-    df_customer = load_data(sheet2_url)
+
+    # Perbaikan untuk data customer, hilangkan kolom yang Unnamed
+    df_customer_raw = load_data(sheet2_url)
+    df_customer = df_customer_raw.loc[:, ~df_customer_raw.columns.str.contains("^Unnamed")]
+
 except Exception as e:
     st.error("❌ Gagal memuat salah satu Google Sheets")
     st.stop()
