@@ -5,61 +5,65 @@ import plotly.express as px
 # ========== CONFIGURASI ==========
 st.set_page_config(page_title="Dashboard Google Sheet", layout="wide")
 
-# ========== SETUP LINK GOOGLE SHEET ==========
-sheet_id = "1btaoOSn3StOn_NSROY8tdgV_Y9jRVAF45PdTITWGlmY"
-sheet_name = "Sheet1"  # Pastikan sesuai
-csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+# ========== LINK GOOGLE SHEET ==========
+# Tabel 1: DATA HARGA MOBIL
+sheet1_url = "https://docs.google.com/spreadsheets/d/1btaoOSn3StOn_NSROY8tdgV_Y9jRVAF45PdTITWGlmY/gviz/tq?tqx=out:csv&sheet=Sheet1"
 
-# ========== SIDEBAR ==========
-with st.sidebar:
-    st.title("📊 Menu Navigasi")
-    selected = st.radio("Pilih halaman:", ["📄 Tabel Data", "📈 Visualisasi"])
+# Tabel 2: DATA CUSTOMER
+sheet2_url = "https://docs.google.com/spreadsheets/d/1qV5t1JSeYT6Lr5pPmbUqdPYLOWCDshOn5CTzRINyPZM/gviz/tq?tqx=out:csv&sheet=Sheet1"
 
 # ========== LOAD DATA ==========
 @st.cache_data
-def load_data():
-    return pd.read_csv(csv_url)
+def load_data(sheet_url):
+    return pd.read_csv(sheet_url)
 
 try:
-    df = load_data()
+    df_mobil = load_data(sheet1_url)
+    df_customer = load_data(sheet2_url)
 except Exception as e:
-    st.error("❌ Gagal memuat data dari Google Sheets")
+    st.error("❌ Gagal memuat salah satu Google Sheets")
     st.stop()
 
-# ========== PREPROCESS DATA ==========
-# Fungsi konversi harga dari format 'Rp1.000.000,00' menjadi integer
+# ========== PREPROSES DATA HARGA MOBIL ==========
 def to_number(s):
     try:
         return int(str(s).replace("Rp", "").replace(".", "").replace(",", "").strip())
     except:
         return None
 
-df["harga_baru"] = df["Harga (Rp)"].apply(to_number)
-df["harga_lama"] = df["Harga Lama"].apply(to_number)
-df["checklist_flag"] = df["CHECKLIST"].map({True: "Diceklis", False: "Tidak", "TRUE": "Diceklis", "FALSE": "Tidak"}).fillna("Tidak")
+df_mobil["harga_baru"] = df_mobil["Harga (Rp)"].apply(to_number)
+df_mobil["harga_lama"] = df_mobil["Harga Lama"].apply(to_number)
+df_mobil["checklist_flag"] = df_mobil["CHECKLIST"].map({True: "Diceklis", False: "Tidak", "TRUE": "Diceklis", "FALSE": "Tidak"}).fillna("Tidak")
 
-# ========== HALAMAN: TABEL ==========
-if selected == "📄 Tabel Data":
-    st.title("📄 Data dari Google Sheet")
-    st.dataframe(df, use_container_width=True)
+# ========== SIDEBAR ==========
+with st.sidebar:
+    st.title("📊 Menu Navigasi")
+    selected = st.radio("Pilih halaman:", ["📘 DATA HARGA MOBIL", "📗 DATA CUSTOMER", "📈 VISUALISASI"])
+
+# ========== HALAMAN: DATA HARGA MOBIL ==========
+if selected == "📘 DATA HARGA MOBIL":
+    st.title("📘 TABEL DATA HARGA MOBIL")
+    st.dataframe(df_mobil, use_container_width=True)
+
+# ========== HALAMAN: DATA CUSTOMER ==========
+elif selected == "📗 DATA CUSTOMER":
+    st.title("📗 TABEL DATA CUSTOMER")
+    st.dataframe(df_customer, use_container_width=True)
 
 # ========== HALAMAN: VISUALISASI ==========
-elif selected == "📈 Visualisasi":
-    st.title("📈 Visualisasi Data Mobil")
+elif selected == "📈 VISUALISASI":
+    st.title("📈 VISUALISASI DATA HARGA MOBIL")
 
-    # 1. Jumlah unit per Model
     st.subheader("Jumlah Unit per Model")
-    fig_model = px.histogram(df, x="Model", color="Model", title="Jumlah Mobil per Model")
+    fig_model = px.histogram(df_mobil, x="Model", color="Model", title="Jumlah Mobil per Model")
     st.plotly_chart(fig_model, use_container_width=True)
 
-    # 2. Distribusi STATUS Update
     st.subheader("Status Update (SUDAH / BELUM)")
-    fig_status = px.pie(df, names="STATUS", title="Distribusi STATUS Update")
+    fig_status = px.pie(df_mobil, names="STATUS", title="Distribusi STATUS Update")
     st.plotly_chart(fig_status, use_container_width=True)
 
-    # 3. Perbandingan Harga Lama vs Baru
     st.subheader("Perbandingan Harga Lama dan Harga Baru")
-    harga_df = df.dropna(subset=["harga_baru", "harga_lama"])
+    harga_df = df_mobil.dropna(subset=["harga_baru", "harga_lama"])
     if not harga_df.empty:
         fig_harga = px.bar(
             harga_df,
@@ -73,9 +77,8 @@ elif selected == "📈 Visualisasi":
     else:
         st.info("Tidak ada data harga lama untuk dibandingkan.")
 
-    # 4. Checklist Status Count
     st.subheader("Status Checklist")
-    checklist_counts = df["checklist_flag"].value_counts().reset_index()
+    checklist_counts = df_mobil["checklist_flag"].value_counts().reset_index()
     checklist_counts.columns = ["Checklist", "Jumlah"]
     fig_checklist = px.bar(checklist_counts, x="Checklist", y="Jumlah", color="Checklist", title="Checklist Status")
     st.plotly_chart(fig_checklist, use_container_width=True)
