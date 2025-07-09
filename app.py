@@ -67,7 +67,7 @@ with st.sidebar:
 
 # ========== HOME ==========
 if menu == "🏠 Home":
-    st.markdown('<div class="meslon-title">System Meslon Digital</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meslon-title">System Meson Digital</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Selamat datang di sistem dashboard & layanan interaktif</div>', unsafe_allow_html=True)
 
     col1, col2 = st.columns([1, 1.2])
@@ -78,9 +78,9 @@ if menu == "🏠 Home":
         )
     with col2:
         st.markdown("""
-        ### Apa itu Meslon Digital?
+        ### Apa itu Meson Digital?
 
-        Meslon Digital adalah platform monitoring data dan interaksi digital yang memudahkan Anda melihat informasi penting dengan cepat dan modern.
+        Meson Digital adalah platform monitoring data dan interaksi digital yang memudahkan Anda melihat informasi penting dengan cepat dan modern.
 
         **Fitur:**
         - Visualisasi data otomatis  
