@@ -92,7 +92,7 @@ if menu == "🏠 Home":
 # ========== DATA CUSTOMER ==========
 elif menu == "📗 Data Customer":
     # Aktifkan auto refresh hanya di halaman ini
-    st_autorefresh(interval=60000, key="datarefresh")  # refresh setiap 60 detik
+    st_autorefresh(interval=1000, key="datarefresh")  # refresh setiap 60 detik
 
     st.title("📗 TABEL DATA CUSTOMER")
     st.dataframe(df_customer, use_container_width=True)
