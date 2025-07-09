@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from streamlit_autorefresh import st_autorefresh
 
 # ========== CONFIGURASI ==========
 st.set_page_config(page_title="System Meslon Digital", layout="wide")
@@ -49,7 +50,7 @@ st.markdown("""
 # ========== LOAD GOOGLE SHEET ==========
 sheet2_url = "https://docs.google.com/spreadsheets/d/1qV5t1JSeYT6Lr5pPmbUqdPYLOWCDshOn5CTzRINyPZM/gviz/tq?tqx=out:csv&sheet=Sheet1"
 
-@st.cache_data
+@st.cache_data(ttl=60)  # Cache otomatis refresh setiap 60 detik
 def load_data(sheet_url):
     return pd.read_csv(sheet_url)
 
@@ -90,6 +91,9 @@ if menu == "🏠 Home":
 
 # ========== DATA CUSTOMER ==========
 elif menu == "📗 Data Customer":
+    # Aktifkan auto refresh hanya di halaman ini
+    st_autorefresh(interval=60000, key="datarefresh")  # refresh setiap 60 detik
+
     st.title("📗 TABEL DATA CUSTOMER")
     st.dataframe(df_customer, use_container_width=True)
 
