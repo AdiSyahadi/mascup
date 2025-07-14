@@ -50,13 +50,14 @@ st.markdown("""
 # ========== LOAD GOOGLE SHEET ==========
 sheet2_url = "https://docs.google.com/spreadsheets/d/1qV5t1JSeYT6Lr5pPmbUqdPYLOWCDshOn5CTzRINyPZM/gviz/tq?tqx=out:csv&sheet=Sheet1"
 
-@st.cache_data(ttl=60)  # Cache otomatis refresh setiap 60 detik
+@st.cache_data(ttl=60)
 def load_data(sheet_url):
     return pd.read_csv(sheet_url)
 
 try:
     df_customer_raw = load_data(sheet2_url)
     df_customer = df_customer_raw.loc[:, ~df_customer_raw.columns.str.contains("^Unnamed")]
+    df_customer.replace("None", pd.NA, inplace=True)
 except Exception as e:
     st.error("❌ Gagal memuat data Google Sheets")
     st.stop()
@@ -64,7 +65,13 @@ except Exception as e:
 # ========== SIDEBAR ==========
 with st.sidebar:
     st.title("📊 Navigasi")
-    menu = st.radio("Pilih halaman:", ["🏠 Home", "📗 Data Customer", "🤖 ChatBot"])
+    menu = st.radio("Pilih halaman:", [
+        "🏠 Home",
+        "📗 Data Customer",
+        "📈 Analisis Data",
+        "📥 Import & Export",
+        "🤖 ChatBot"
+    ])
 
 # ========== HOME ==========
 if menu == "🏠 Home":
@@ -91,11 +98,74 @@ if menu == "🏠 Home":
 
 # ========== DATA CUSTOMER ==========
 elif menu == "📗 Data Customer":
-    # Aktifkan auto refresh hanya di halaman ini
     st_autorefresh(interval=1000, key="datarefresh")  # refresh setiap 60 detik
-
     st.title("📗 TABEL DATA CUSTOMER")
     st.dataframe(df_customer, use_container_width=True)
+
+# ========== ANALISIS DATA ==========
+elif menu == "📈 Analisis Data":
+    st.title("📈 Insight Bisnis dari Data Customer")
+
+    st.subheader("👥 Jumlah Total Customer")
+    st.metric("Total Customer Terdaftar", len(df_customer))
+
+    st.subheader("🏢 Top 5 Perusahaan dengan Customer Terbanyak")
+    top_perusahaan = df_customer["Nama Perusahaan Edutec"].value_counts().head(5)
+    st.bar_chart(top_perusahaan)
+
+    st.subheader("📞 Kanal Kontak yang Paling Sering Digunakan")
+    kontak_summary = {
+        "Email": df_customer["Email"].notna().sum(),
+        "WhatsApp": df_customer["WhatsApp"].notna().sum(),
+        "Instagram": df_customer["instagram"].notna().sum(),
+        "Website": df_customer["Website edutec.com"].notna().sum()
+    }
+    st.dataframe(pd.DataFrame.from_dict(kontak_summary, orient="index", columns=["Jumlah"]).sort_values(by="Jumlah", ascending=False))
+
+    st.subheader("📌 Persentase Customer yang Mengisi Kontak")
+    total = len(df_customer)
+    kontak_lengkap = df_customer[["Email", "WhatsApp", "instagram", "Website edutec.com"]].notna().any(axis=1).sum()
+    st.metric("Customer Isi Minimal Satu Kontak", f"{kontak_lengkap}", f"{(kontak_lengkap / total) * 100:.1f}%")
+
+    if "sumber" in df_customer.columns and df_customer["sumber"].notna().any():
+        st.subheader("📡 Distribusi Customer berdasarkan Sumber")
+        st.bar_chart(df_customer["sumber"].value_counts())
+
+# ========== IMPORT & EXPORT ==========
+elif menu == "📥 Import & Export":
+    st.title("📥 Import & Export Data")
+
+    uploaded_file = st.file_uploader("Upload file CSV atau Excel", type=["csv", "xlsx"])
+    if uploaded_file is not None:
+        try:
+            if uploaded_file.name.endswith(".csv"):
+                df_import = pd.read_csv(uploaded_file)
+            else:
+                df_import = pd.read_excel(uploaded_file)
+
+            st.success("✅ File berhasil diupload!")
+            st.subheader("👁️ Preview Data")
+            st.dataframe(df_import.head(), use_container_width=True)
+
+            st.subheader("✅ Pilih Kolom untuk Diekspor")
+            selected_columns = st.multiselect(
+                "Pilih kolom yang ingin disimpan/export:",
+                options=df_import.columns.tolist(),
+                default=df_import.columns.tolist()
+            )
+
+            if selected_columns:
+                df_export = df_import[selected_columns]
+
+                # Tombol download
+                st.download_button(
+                    label="💾 Download CSV",
+                    data=df_export.to_csv(index=False).encode('utf-8'),
+                    file_name="data_terpilih.csv",
+                    mime="text/csv"
+                )
+        except Exception as e:
+            st.error(f"❌ Gagal memproses file: {e}")
 
 # ========== CHATBOT ==========
 elif menu == "🤖 ChatBot":
@@ -104,7 +174,6 @@ elif menu == "🤖 ChatBot":
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # Tampilkan chat history
     with st.container():
         st.markdown('<div class="chat-box">', unsafe_allow_html=True)
         for role, msg in st.session_state.chat_history:
@@ -112,7 +181,6 @@ elif menu == "🤖 ChatBot":
             st.markdown(f'<div class="{css_class}">{msg}</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Form input + tombol kirim
     with st.form(key="chat_form", clear_on_submit=True):
         user_input = st.text_input("Ketik pesan Anda...")
         submitted = st.form_submit_button("Kirim 💬")
