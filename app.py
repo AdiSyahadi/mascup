@@ -4,11 +4,9 @@ import time
 from streamlit_autorefresh import st_autorefresh
 
 # ========== CONFIG ==========
-
 st.set_page_config(page_title="System Meslon Digital", layout="wide")
 
 # ========== STYLE ==========
-
 st.markdown("""
     <style>
     .meslon-title {
@@ -54,7 +52,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ========== LOAD DATA ==========
-
 sheet2_url = "https://docs.google.com/spreadsheets/d/1qV5t1JSeYT6Lr5pPmbUqdPYLOWCDshOn5CTzRINyPZM/gviz/tq?tqx=out:csv&sheet=Sheet1"
 
 @st.cache_data(ttl=60)
@@ -70,7 +67,6 @@ except Exception as e:
     st.stop()
 
 # ========== SIDEBAR ==========
-
 with st.sidebar:
     st.title("📊 Navigasi")
     menu = st.radio("Pilih halaman:", [
@@ -81,7 +77,6 @@ with st.sidebar:
     ])
 
 # ========== HOME ==========
-
 if menu == "🏠 Home":
     st.markdown('<div class="meslon-title">System Meslon Digital</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Selamat datang di sistem dashboard & layanan interaktif</div>', unsafe_allow_html=True)
@@ -105,12 +100,10 @@ if menu == "🏠 Home":
         """)
 
 # ========== DATA CUSTOMER ==========
-
 elif menu == "📗 Data Customer":
     st_autorefresh(interval=1000, key="datarefresh")
     st.title("📗 TABEL DATA CUSTOMER")
 
-    # Export (di atas tabel)
     st.subheader("⬇️ Export Data Customer")
     selected_cols = st.multiselect(
         "Pilih kolom yang ingin diekspor:",
@@ -127,11 +120,9 @@ elif menu == "📗 Data Customer":
             mime="text/csv"
         )
 
-    # Tampilkan data
     st.dataframe(df_customer, use_container_width=True)
 
 # ========== ANALISIS DATA ==========
-
 elif menu == "📈 Analisis Data":
     st.title("📈 Insight Bisnis dari Data Customer")
 
@@ -177,7 +168,6 @@ elif menu == "📈 Analisis Data":
         st.warning("Tidak ada kolom kontak yang bisa dihitung.")
 
 # ========== CHATBOT ==========
-
 elif menu == "🤖 ChatBot":
     st.title("🤖 ChatBot Sederhana")
 
@@ -244,7 +234,7 @@ elif menu == "🤖 ChatBot":
                 response = "Saya adalah chatbot dari Sistem Meslon Digital 🤖"
 
             elif "data" in user_input_lower:
-                response = "Silakan buka menu 📗 Data Customer di sidebar untuk melihat semua data."
+                response = "Silakan buka menu 📗 Data Customer di sidebar."
 
             elif "hai" in user_input_lower or "hi" in user_input_lower:
                 response = "Hai juga! Ada yang bisa saya bantu?"
@@ -253,4 +243,5 @@ elif menu == "🤖 ChatBot":
                 response = "Maaf, saya belum mengerti. Coba gunakan prompt seperti 'total customer', 'email', atau 'dari perusahaan [nama]'. 😊"
 
         st.session_state.chat_history.append(("bot", response))
-        st.experimental_rerun()
+        css_class = "bot-msg"
+        st.markdown(f'<div class="{css_class}">{response}</div>', unsafe_allow_html=True)
