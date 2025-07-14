@@ -171,19 +171,27 @@ elif menu == "📈 Analisis Data":
 elif menu == "🤖 ChatBot":
     st.title("🤖 ChatBot Sederhana")
 
-    with st.expander("💡 Prompt yang bisa digunakan"):
-        st.markdown("""
-        Kamu bisa tanya hal-hal seperti:
-        - `total customer`
-        - `5 customer terakhir`
-        - `berapa customer yang mengisi email`
-        - `customer dari perusahaan [nama perusahaan]`
-        - `siapa kamu`
-        """)
+    # ========== TOMBOL PROMPT ========== #
+    with st.expander("💡 Klik salah satu prompt"):
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Total customer"):
+                st.session_state.user_input_default = "total customer"
+            if st.button("5 customer terakhir"):
+                st.session_state.user_input_default = "5 customer terakhir"
+            if st.button("Berapa yang mengisi email"):
+                st.session_state.user_input_default = "berapa customer yang mengisi email"
+        with col2:
+            if st.button("Dari perusahaan ABC"):
+                st.session_state.user_input_default = "customer dari perusahaan ABC"
+            if st.button("Siapa kamu?"):
+                st.session_state.user_input_default = "siapa kamu"
 
+    # ========== INISIALISASI CHAT HISTORY ==========
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+    # ========== TAMPILKAN CHAT HISTORY ==========
     with st.container():
         st.markdown('<div class="chat-box">', unsafe_allow_html=True)
         for role, msg in st.session_state.chat_history:
@@ -191,11 +199,14 @@ elif menu == "🤖 ChatBot":
             st.markdown(f'<div class="{css_class}">{msg}</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # ========== INPUT DAN SUBMIT ==========
+    default_input = st.session_state.get("user_input_default", "")
     with st.form(key="chat_form", clear_on_submit=True):
-        user_input = st.text_input("Ketik pertanyaanmu di sini...")
+        user_input = st.text_input("Ketik pertanyaanmu di sini...", value=default_input)
         submitted = st.form_submit_button("Kirim 💬")
 
     if submitted and user_input.strip():
+        st.session_state.pop("user_input_default", None)  # hapus default setelah dipakai
         st.session_state.chat_history.append(("user", user_input))
         user_input_lower = user_input.lower()
 
@@ -245,3 +256,4 @@ elif menu == "🤖 ChatBot":
         st.session_state.chat_history.append(("bot", response))
         css_class = "bot-msg"
         st.markdown(f'<div class="{css_class}">{response}</div>', unsafe_allow_html=True)
+
