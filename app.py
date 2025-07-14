@@ -80,7 +80,7 @@ if menu == "🏠 Home":
     col1, col2 = st.columns([1, 1.2])
     with col1:
         st.image(
-            "https://images.unsplash.com/photo-1635837594301-aee27378931f?q=80&w=871&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+            "https://images.unsplash.com/photo-1635837594301-aee27378931f?q=80&w=871&auto=format&fit=crop&ixlib=rb-4.1.0",
             use_container_width=True
         )
     with col2:
@@ -100,7 +100,7 @@ elif menu == "📗 Data Customer":
     st_autorefresh(interval=1000, key="datarefresh")
     st.title("📗 TABEL DATA CUSTOMER")
 
-    # Export data (di atas tabel)
+    # Export (di atas tabel)
     st.subheader("⬇️ Export Data Customer")
     selected_cols = st.multiselect(
         "Pilih kolom yang ingin diekspor:",
@@ -117,7 +117,7 @@ elif menu == "📗 Data Customer":
             mime="text/csv"
         )
 
-    # Tampilkan tabel data
+    # Tampilkan data
     st.dataframe(df_customer, use_container_width=True)
 
 # ========== ANALISIS DATA ==========
@@ -172,6 +172,19 @@ elif menu == "🤖 ChatBot":
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+    # ✅ NOTE PROMPT
+    with st.expander("📌 Prompt yang Bisa Digunakan"):
+        st.markdown("""
+        Berikut beberapa contoh pesan yang bisa kamu ketik untuk mendapatkan informasi dari data customer:
+
+        - **total customer** → Menampilkan jumlah seluruh customer  
+        - **email** → Menampilkan berapa customer yang mengisi email  
+        - **5 customer terakhir** → Menampilkan 5 customer paling akhir  
+        - **dari perusahaan [nama]** → Menampilkan jumlah customer dari perusahaan tertentu  
+        - **siapa kamu** → Mengenal chatbot  
+        """)
+
+    # Kotak chat history
     with st.container():
         st.markdown('<div class="chat-box">', unsafe_allow_html=True)
         for role, msg in st.session_state.chat_history:
@@ -179,21 +192,55 @@ elif menu == "🤖 ChatBot":
             st.markdown(f'<div class="{css_class}">{msg}</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # Form chat
     with st.form(key="chat_form", clear_on_submit=True):
         user_input = st.text_input("Ketik pesan Anda...")
         submitted = st.form_submit_button("Kirim 💬")
 
+    # Logika respon ChatBot
     if submitted and user_input.strip():
         st.session_state.chat_history.append(("user", user_input))
-
         user_input_lower = user_input.lower()
-        if "hi" in user_input_lower:
-            response = "Hai juga! Ada yang bisa saya bantu?"
-        elif "data" in user_input_lower:
-            response = "Data customer dapat dilihat di menu sebelah kiri ya!"
+
+        if "total customer" in user_input_lower:
+            response = f"Total customer saat ini ada {len(df_customer)} orang."
+
+        elif "5 customer terakhir" in user_input_lower:
+            try:
+                recent_customers = df_customer.tail(5)
+                nama_col = df_customer.columns[0]
+                response = "5 customer terakhir:\n" + "\n".join(recent_customers[nama_col].astype(str).tolist())
+            except:
+                response = "Maaf, data customer tidak bisa dibaca."
+
+        elif "email" in user_input_lower:
+            email_cols = [col for col in df_customer.columns if "email" in col.lower()]
+            if email_cols:
+                count = df_customer[email_cols[0]].notna().sum()
+                response = f"Ada {count} customer yang mengisi alamat email."
+            else:
+                response = "Kolom email tidak ditemukan dalam data."
+
+        elif "dari perusahaan" in user_input_lower:
+            keyword = user_input_lower.split("perusahaan")[-1].strip()
+            perusahaan_cols = [col for col in df_customer.columns if "perusahaan" in col.lower()]
+            if perusahaan_cols and keyword:
+                match = df_customer[df_customer[perusahaan_cols[0]].str.contains(keyword, case=False, na=False)]
+                response = f"Ada {len(match)} customer dari perusahaan \"{keyword}\"."
+            else:
+                response = "Data perusahaan tidak ditemukan atau tidak lengkap."
+
         elif "siapa kamu" in user_input_lower:
             response = "Saya adalah chatbot dari Sistem Meslon Digital 🤖"
+
+        elif "data" in user_input_lower:
+            response = "Data customer bisa dilihat di menu 'Data Customer' ya!"
+
+        elif "hai" in user_input_lower or "hi" in user_input_lower:
+            response = "Hai juga! Ada yang bisa saya bantu?"
+
         else:
-            response = "Maaf, saya belum mengerti. Silakan coba pertanyaan lain 😊"
+            response = "Maaf, saya belum mengerti. Silakan coba prompt seperti 'total customer', 'email', atau 'dari perusahaan ABC'. 😊"
 
         st.session_state.chat_history.append(("bot", response))
+
