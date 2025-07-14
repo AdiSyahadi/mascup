@@ -32,20 +32,24 @@ st.markdown("""
     .user-msg {
         color: white;
         background-color: #4A6CF7;
-        padding: 0.5rem 1rem;
+        padding: 0.6rem 1rem;
         border-radius: 1rem;
-        margin: 0.2rem 0;
+        margin: 0.4rem 0;
         text-align: right;
+        font-size: 1rem;
     }
     .bot-msg {
-        background-color: #e0e0e0;
-        padding: 0.5rem 1rem;
+        background-color: #444;
+        color: white;
+        padding: 0.6rem 1rem;
         border-radius: 1rem;
-        margin: 0.2rem 0;
+        margin: 0.4rem 0;
         text-align: left;
+        font-size: 1rem;
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 # ========== LOAD DATA ==========
 sheet2_url = "https://docs.google.com/spreadsheets/d/1qV5t1JSeYT6Lr5pPmbUqdPYLOWCDshOn5CTzRINyPZM/gviz/tq?tqx=out:csv&sheet=Sheet1"
