@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from streamlit.runtime.scriptrunner import RerunException
+from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
 from streamlit_autorefresh import st_autorefresh
 
 # ========== CONFIG ==========
@@ -170,11 +172,11 @@ elif menu == "📈 Analisis Data":
         st.warning("Tidak ada kolom kontak yang bisa dihitung.")
 
 # ========== CHATBOT ==========
-# ========== CHATBOT ==========
 elif menu == "🤖 ChatBot":
+    import time
     st.title("🤖 ChatBot Sederhana")
 
-    # Catatan prompt yang bisa digunakan
+    # Prompt bantuan
     with st.expander("💡 Prompt yang bisa digunakan"):
         st.markdown("""
         Kamu bisa tanya hal-hal seperti:
@@ -185,9 +187,11 @@ elif menu == "🤖 ChatBot":
         - `siapa kamu`
         """)
 
+    # Inisialisasi chat history
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+    # Tampilkan chat history
     with st.container():
         st.markdown('<div class="chat-box">', unsafe_allow_html=True)
         for role, msg in st.session_state.chat_history:
@@ -195,58 +199,62 @@ elif menu == "🤖 ChatBot":
             st.markdown(f'<div class="{css_class}">{msg}</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # Form untuk input user
     with st.form(key="chat_form", clear_on_submit=True):
         user_input = st.text_input("Ketik pertanyaanmu di sini...")
         submitted = st.form_submit_button("Kirim 💬")
 
+    # Proses input
     if submitted and user_input.strip():
         st.session_state.chat_history.append(("user", user_input))
         user_input_lower = user_input.lower()
 
         with st.spinner("⏳ Sedang menganalisis data, mohon tunggu..."):
-            import time
-            time.sleep(0.8)
+            time.sleep(0.6)
 
+            # Logika respon chatbot
             if "total customer" in user_input_lower:
                 response = f"Total customer saat ini ada {len(df_customer)} orang."
 
             elif "5 customer terakhir" in user_input_lower:
                 try:
-                    recent_customers = df_customer.tail(5)
                     nama_col = df_customer.columns[0]
-                    response = "5 customer terakhir:\n" + "\n".join(recent_customers[nama_col].astype(str).tolist())
+                    recent_customers = df_customer[nama_col].dropna().astype(str).tail(5)
+                    response = "5 customer terakhir:\n" + "\n".join(recent_customers.tolist())
                 except:
-                    response = "Maaf, data customer tidak bisa dibaca."
+                    response = "Maaf, tidak dapat membaca data customer."
 
             elif "email" in user_input_lower:
                 email_cols = [col for col in df_customer.columns if "email" in col.lower()]
                 if email_cols:
                     count = df_customer[email_cols[0]].notna().sum()
-                    response = f"Ada {count} customer yang mengisi alamat email."
+                    response = f"Ada {count} customer yang mengisi email."
                 else:
-                    response = "Kolom email tidak ditemukan dalam data."
+                    response = "Kolom email tidak ditemukan."
 
-            elif "dari perusahaan" in user_input_lower:
+            elif "perusahaan" in user_input_lower:
                 keyword = user_input_lower.split("perusahaan")[-1].strip()
                 perusahaan_cols = [col for col in df_customer.columns if "perusahaan" in col.lower()]
                 if perusahaan_cols and keyword:
                     match = df_customer[df_customer[perusahaan_cols[0]].str.contains(keyword, case=False, na=False)]
                     response = f"Ada {len(match)} customer dari perusahaan \"{keyword}\"."
                 else:
-                    response = "Data perusahaan tidak ditemukan atau tidak lengkap."
+                    response = "Perusahaan tidak ditemukan atau keyword kosong."
 
             elif "siapa kamu" in user_input_lower:
                 response = "Saya adalah chatbot dari Sistem Meslon Digital 🤖"
 
             elif "data" in user_input_lower:
-                response = "Data customer bisa dilihat di menu '📗 Data Customer' ya!"
+                response = "Silakan buka menu 📗 Data Customer di sidebar untuk melihat semua data."
 
             elif "hai" in user_input_lower or "hi" in user_input_lower:
                 response = "Hai juga! Ada yang bisa saya bantu?"
 
             else:
-                response = "Maaf, saya belum mengerti. Silakan coba prompt seperti 'total customer', 'email', atau 'dari perusahaan ABC'. 😊"
+                response = "Maaf, saya belum mengerti. Coba gunakan prompt seperti 'total customer', 'email', atau 'dari perusahaan [nama]'. 😊"
 
         st.session_state.chat_history.append(("bot", response))
+        st.experimental_rerun()  # 👈 Agar respons langsung muncul
+
 
 
