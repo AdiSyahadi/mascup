@@ -47,7 +47,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ========== LOAD GOOGLE SHEET ==========
+# ========== LOAD DATA ==========
 sheet2_url = "https://docs.google.com/spreadsheets/d/1qV5t1JSeYT6Lr5pPmbUqdPYLOWCDshOn5CTzRINyPZM/gviz/tq?tqx=out:csv&sheet=Sheet1"
 
 @st.cache_data(ttl=60)
@@ -69,7 +69,6 @@ with st.sidebar:
         "🏠 Home",
         "📗 Data Customer",
         "📈 Analisis Data",
-        "📥 Import & Export",
         "🤖 ChatBot"
     ])
 
@@ -100,11 +99,8 @@ if menu == "🏠 Home":
 elif menu == "📗 Data Customer":
     st_autorefresh(interval=1000, key="datarefresh")
     st.title("📗 TABEL DATA CUSTOMER")
-    
-    # Tampilkan data
-    st.dataframe(df_customer, use_container_width=True)
 
-    # Export data
+    # Export data (di atas tabel)
     st.subheader("⬇️ Export Data Customer")
     selected_cols = st.multiselect(
         "Pilih kolom yang ingin diekspor:",
@@ -120,6 +116,9 @@ elif menu == "📗 Data Customer":
             file_name="data_customer_terpilih.csv",
             mime="text/csv"
         )
+
+    # Tampilkan tabel data
+    st.dataframe(df_customer, use_container_width=True)
 
 # ========== ANALISIS DATA ==========
 elif menu == "📈 Analisis Data":
@@ -165,6 +164,7 @@ elif menu == "📈 Analisis Data":
         st.metric("Customer Isi Minimal Satu Kontak", f"{kontak_lengkap}", f"{(kontak_lengkap / total) * 100:.1f}%")
     else:
         st.warning("Tidak ada kolom kontak yang bisa dihitung.")
+
 # ========== CHATBOT ==========
 elif menu == "🤖 ChatBot":
     st.title("🤖 ChatBot Sederhana")
