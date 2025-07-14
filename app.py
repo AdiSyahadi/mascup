@@ -165,41 +165,6 @@ elif menu == "📈 Analisis Data":
         st.metric("Customer Isi Minimal Satu Kontak", f"{kontak_lengkap}", f"{(kontak_lengkap / total) * 100:.1f}%")
     else:
         st.warning("Tidak ada kolom kontak yang bisa dihitung.")
-
-# ========== IMPORT & EXPORT ==========
-elif menu == "📥 Import & Export":
-    st.title("📥 Import & Export Data")
-
-    uploaded_file = st.file_uploader("Upload file CSV atau Excel", type=["csv", "xlsx"])
-    if uploaded_file is not None:
-        try:
-            if uploaded_file.name.endswith(".csv"):
-                df_import = pd.read_csv(uploaded_file)
-            else:
-                df_import = pd.read_excel(uploaded_file)
-
-            st.success("✅ File berhasil diupload!")
-            st.subheader("👁️ Preview Data")
-            st.dataframe(df_import.head(), use_container_width=True)
-
-            st.subheader("✅ Pilih Kolom untuk Diekspor")
-            selected_columns = st.multiselect(
-                "Pilih kolom yang ingin disimpan/export:",
-                options=df_import.columns.tolist(),
-                default=df_import.columns.tolist()
-            )
-
-            if selected_columns:
-                df_export = df_import[selected_columns]
-                st.download_button(
-                    label="💾 Download CSV",
-                    data=df_export.to_csv(index=False).encode('utf-8'),
-                    file_name="data_terpilih.csv",
-                    mime="text/csv"
-                )
-        except Exception as e:
-            st.error(f"❌ Gagal memproses file: {e}")
-
 # ========== CHATBOT ==========
 elif menu == "🤖 ChatBot":
     st.title("🤖 ChatBot Sederhana")
