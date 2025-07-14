@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 from streamlit_autorefresh import st_autorefresh
 
-# ========== CONFIGURASI ==========
+# ========== CONFIG ==========
 st.set_page_config(page_title="System Meslon Digital", layout="wide")
 
-# ========== STYLE TAMBAHAN ==========
+# ========== STYLE ==========
 st.markdown("""
     <style>
     .meslon-title {
@@ -75,7 +75,7 @@ with st.sidebar:
 
 # ========== HOME ==========
 if menu == "🏠 Home":
-    st.markdown('<div class="meslon-title">System Meson Digital</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meslon-title">System Meslon Digital</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Selamat datang di sistem dashboard & layanan interaktif</div>', unsafe_allow_html=True)
 
     col1, col2 = st.columns([1, 1.2])
@@ -86,7 +86,7 @@ if menu == "🏠 Home":
         )
     with col2:
         st.markdown("""
-        ### Apa itu Meson Digital?
+        ### Apa itu Meslon Digital?
 
         Meson Digital adalah platform monitoring data dan interaksi digital yang memudahkan Anda melihat informasi penting dengan cepat dan modern.
 
@@ -94,13 +94,32 @@ if menu == "🏠 Home":
         - Visualisasi data otomatis  
         - Integrasi Google Sheets  
         - ChatBot untuk interaksi dasar  
-        """, unsafe_allow_html=True)
+        """)
 
 # ========== DATA CUSTOMER ==========
 elif menu == "📗 Data Customer":
-    st_autorefresh(interval=1000, key="datarefresh")  # refresh setiap 60 detik
+    st_autorefresh(interval=1000, key="datarefresh")
     st.title("📗 TABEL DATA CUSTOMER")
+    
+    # Tampilkan data
     st.dataframe(df_customer, use_container_width=True)
+
+    # Export data
+    st.subheader("⬇️ Export Data Customer")
+    selected_cols = st.multiselect(
+        "Pilih kolom yang ingin diekspor:",
+        options=df_customer.columns.tolist(),
+        default=df_customer.columns.tolist()
+    )
+
+    if selected_cols:
+        export_df = df_customer[selected_cols].drop_duplicates().dropna(how="all")
+        st.download_button(
+            label="💾 Download CSV",
+            data=export_df.to_csv(index=False).encode("utf-8"),
+            file_name="data_customer_terpilih.csv",
+            mime="text/csv"
+        )
 
 # ========== ANALISIS DATA ==========
 elif menu == "📈 Analisis Data":
@@ -110,26 +129,42 @@ elif menu == "📈 Analisis Data":
     st.metric("Total Customer Terdaftar", len(df_customer))
 
     st.subheader("🏢 Top 5 Perusahaan dengan Customer Terbanyak")
-    top_perusahaan = df_customer["Nama Perusahaan Edutec"].value_counts().head(5)
-    st.bar_chart(top_perusahaan)
+    perusahaan_kolom = [col for col in df_customer.columns if "perusahaan" in col.lower()]
+    if perusahaan_kolom:
+        top_perusahaan = df_customer[perusahaan_kolom[0]].value_counts().head(5)
+        st.bar_chart(top_perusahaan)
+    else:
+        st.warning("Kolom perusahaan tidak ditemukan.")
 
     st.subheader("📞 Kanal Kontak yang Paling Sering Digunakan")
-    kontak_summary = {
-        "Email": df_customer["Email"].notna().sum(),
-        "WhatsApp": df_customer["WhatsApp"].notna().sum(),
-        "Instagram": df_customer["instagram"].notna().sum(),
-        "Website": df_customer["Website edutec.com"].notna().sum()
+    kontak_summary = {}
+    kontak_kolom_dict = {
+        "Email": ["email", "email address"],
+        "WhatsApp": ["whatsapp", "no whatsapp"],
+        "Instagram": ["instagram"],
+        "Website": ["website", "website edutec.com"]
     }
-    st.dataframe(pd.DataFrame.from_dict(kontak_summary, orient="index", columns=["Jumlah"]).sort_values(by="Jumlah", ascending=False))
+
+    for label, keyword_list in kontak_kolom_dict.items():
+        for keyword in keyword_list:
+            match = [col for col in df_customer.columns if keyword.lower() in col.lower()]
+            if match:
+                kontak_summary[label] = df_customer[match[0]].notna().sum()
+                break
+
+    if kontak_summary:
+        st.dataframe(pd.DataFrame.from_dict(kontak_summary, orient="index", columns=["Jumlah"]).sort_values(by="Jumlah", ascending=False))
+    else:
+        st.warning("Tidak ada kolom kontak ditemukan.")
 
     st.subheader("📌 Persentase Customer yang Mengisi Kontak")
-    total = len(df_customer)
-    kontak_lengkap = df_customer[["Email", "WhatsApp", "instagram", "Website edutec.com"]].notna().any(axis=1).sum()
-    st.metric("Customer Isi Minimal Satu Kontak", f"{kontak_lengkap}", f"{(kontak_lengkap / total) * 100:.1f}%")
-
-    if "sumber" in df_customer.columns and df_customer["sumber"].notna().any():
-        st.subheader("📡 Distribusi Customer berdasarkan Sumber")
-        st.bar_chart(df_customer["sumber"].value_counts())
+    kontak_kolom_valid = [col for col in df_customer.columns if any(k in col.lower() for k in ["email", "whatsapp", "instagram", "website"])]
+    if kontak_kolom_valid:
+        total = len(df_customer)
+        kontak_lengkap = df_customer[kontak_kolom_valid].notna().any(axis=1).sum()
+        st.metric("Customer Isi Minimal Satu Kontak", f"{kontak_lengkap}", f"{(kontak_lengkap / total) * 100:.1f}%")
+    else:
+        st.warning("Tidak ada kolom kontak yang bisa dihitung.")
 
 # ========== IMPORT & EXPORT ==========
 elif menu == "📥 Import & Export":
@@ -156,8 +191,6 @@ elif menu == "📥 Import & Export":
 
             if selected_columns:
                 df_export = df_import[selected_columns]
-
-                # Tombol download
                 st.download_button(
                     label="💾 Download CSV",
                     data=df_export.to_csv(index=False).encode('utf-8'),
