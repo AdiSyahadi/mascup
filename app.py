@@ -1,13 +1,14 @@
 import streamlit as st
 import pandas as pd
-from streamlit.runtime.scriptrunner import RerunException
-from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
+import time
 from streamlit_autorefresh import st_autorefresh
 
 # ========== CONFIG ==========
+
 st.set_page_config(page_title="System Meslon Digital", layout="wide")
 
 # ========== STYLE ==========
+
 st.markdown("""
     <style>
     .meslon-title {
@@ -52,8 +53,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
 # ========== LOAD DATA ==========
+
 sheet2_url = "https://docs.google.com/spreadsheets/d/1qV5t1JSeYT6Lr5pPmbUqdPYLOWCDshOn5CTzRINyPZM/gviz/tq?tqx=out:csv&sheet=Sheet1"
 
 @st.cache_data(ttl=60)
@@ -69,6 +70,7 @@ except Exception as e:
     st.stop()
 
 # ========== SIDEBAR ==========
+
 with st.sidebar:
     st.title("📊 Navigasi")
     menu = st.radio("Pilih halaman:", [
@@ -79,6 +81,7 @@ with st.sidebar:
     ])
 
 # ========== HOME ==========
+
 if menu == "🏠 Home":
     st.markdown('<div class="meslon-title">System Meslon Digital</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Selamat datang di sistem dashboard & layanan interaktif</div>', unsafe_allow_html=True)
@@ -102,6 +105,7 @@ if menu == "🏠 Home":
         """)
 
 # ========== DATA CUSTOMER ==========
+
 elif menu == "📗 Data Customer":
     st_autorefresh(interval=1000, key="datarefresh")
     st.title("📗 TABEL DATA CUSTOMER")
@@ -127,6 +131,7 @@ elif menu == "📗 Data Customer":
     st.dataframe(df_customer, use_container_width=True)
 
 # ========== ANALISIS DATA ==========
+
 elif menu == "📈 Analisis Data":
     st.title("📈 Insight Bisnis dari Data Customer")
 
@@ -172,11 +177,10 @@ elif menu == "📈 Analisis Data":
         st.warning("Tidak ada kolom kontak yang bisa dihitung.")
 
 # ========== CHATBOT ==========
+
 elif menu == "🤖 ChatBot":
-    import time
     st.title("🤖 ChatBot Sederhana")
 
-    # Prompt bantuan
     with st.expander("💡 Prompt yang bisa digunakan"):
         st.markdown("""
         Kamu bisa tanya hal-hal seperti:
@@ -187,11 +191,9 @@ elif menu == "🤖 ChatBot":
         - `siapa kamu`
         """)
 
-    # Inisialisasi chat history
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # Tampilkan chat history
     with st.container():
         st.markdown('<div class="chat-box">', unsafe_allow_html=True)
         for role, msg in st.session_state.chat_history:
@@ -199,12 +201,10 @@ elif menu == "🤖 ChatBot":
             st.markdown(f'<div class="{css_class}">{msg}</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Form untuk input user
     with st.form(key="chat_form", clear_on_submit=True):
         user_input = st.text_input("Ketik pertanyaanmu di sini...")
         submitted = st.form_submit_button("Kirim 💬")
 
-    # Proses input
     if submitted and user_input.strip():
         st.session_state.chat_history.append(("user", user_input))
         user_input_lower = user_input.lower()
@@ -212,7 +212,6 @@ elif menu == "🤖 ChatBot":
         with st.spinner("⏳ Sedang menganalisis data, mohon tunggu..."):
             time.sleep(0.6)
 
-            # Logika respon chatbot
             if "total customer" in user_input_lower:
                 response = f"Total customer saat ini ada {len(df_customer)} orang."
 
@@ -254,7 +253,4 @@ elif menu == "🤖 ChatBot":
                 response = "Maaf, saya belum mengerti. Coba gunakan prompt seperti 'total customer', 'email', atau 'dari perusahaan [nama]'. 😊"
 
         st.session_state.chat_history.append(("bot", response))
-        st.experimental_rerun()  # 👈 Agar respons langsung muncul
-
-
-
+        st.experimental_rerun()
